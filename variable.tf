@@ -17,3 +17,4 @@ variable "my_key" {
 variable "instance_user" {
   default = "ubuntu"
 }
+

@@ -1,5 +1,5 @@
 resource "aws_instance" "calculator" {
-  ami           = "ami-05d38da78ce859165" # Replace with a valid AMI ID
+  ami           = data.aws_ami.example.id
   instance_type = var.my_instance         # Correct reference to the variable
 
   key_name  = var.my_key
