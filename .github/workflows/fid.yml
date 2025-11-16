@@ -25,9 +25,9 @@ jobs:
       - name: Deploy to production via SSH
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.PRIVATE_KEY }}
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/calculator
             sudo docker compose pull
