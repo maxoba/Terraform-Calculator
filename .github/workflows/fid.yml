@@ -31,5 +31,6 @@ jobs:
           script: |
             mkdir -p /home/ubuntu/calculator
             cd /home/ubuntu/calculator
-            sudo docker compose pull
-            sudo docker compose up -d --build
+            docker compose pull
+            docker compose up -d --build
+          
