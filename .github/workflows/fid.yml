@@ -19,31 +19,65 @@ jobs:
       # Build Docker Compose images
       - name: Build Docker Compose images
         run: docker compose build
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy to production via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.VM_PRIVATE_KEY }}
-          script: |
-            # Ensure project directory exists
-            mkdir -p /home/ubuntu/calculator
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to production via SSH
+      uses: appleboy/ssh-action@v1.0.3  # Updated to latest version
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USERNAME }}
+        key: ${{ secrets.VM_PRIVATE_KEY }}
+        script: |
+          # Ensure project directory exists
+          mkdir -p /home/ubuntu/calculator
+          cd /home/ubuntu/calculator
+          
+          # Install Docker if missing
+          if ! command -v docker &> /dev/null; then
+            echo "Docker not found. Installing..."
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sudo sh get-docker.sh
+            sudo usermod -aG docker ubuntu
+            echo "Docker installed. Please re-run the workflow."
+            exit 1
+          fi
+          
+          # Install Docker Compose if missing
+          if ! command -v docker compose &> /dev/null; then
+            echo "Docker Compose not found. Installing..."
+            sudo apt-get update
+            sudo apt-get install -y docker-compose-plugin
+          fi
+          
+          # Clone or update repository
+          if [ -d ".git" ]; then
+            git fetch origin
+            git reset --hard origin/main  # or your default branch
+          else
+            git clone https://github.com/${{ github.repository }} .
             cd /home/ubuntu/calculator
+          fi
+          
+          # Pull latest images and restart
+          docker compose pull
+          docker compose up -d --force-recreate
+          
+          # Clean up old images
+          docker image prune -af
 
-            # Install Docker if missing
-            if ! command -v docker &> /dev/null; then
-              echo "Docker not found. Installing..."
-              curl -fsSL https://get.docker.com -o get-docker.sh
-              sudo sh get-docker.sh
-              sudo usermod -aG docker ubuntu
-              newgrp docker
-            fi
+    - name: Verify deployment
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USERNAME }}
+        key: ${{ secrets.VM_PRIVATE_KEY }}
+        script: |
+          cd /home/ubuntu/calculator
+          docker compose ps      
 
-            # Pull and start containers
-            docker compose pull
-            docker compose up -d --build
+  
