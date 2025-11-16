@@ -5,11 +5,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository with full history to avoid Git errors
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          submodules: recursive  # only if you have submodules
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      
 
       # Install Python dependencies
       - name: Install Dependencies
