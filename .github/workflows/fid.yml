@@ -1,33 +1,34 @@
-on: [push, pull_request ]
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Install Dependencies
-      run: |
+      - name: Install Dependencies
+        run: |
           sudo pip install -r src/requirements.txt
           python -m pip install --upgrade pip
 
-    - name: Build with Docker Compose
-      run: docker compose build
-    - name: Build Docker image
-      run:  docker-compose build
+      # Use Docker Compose v2 (built-in)
+      - name: Build with Docker Compose
+        run: docker compose build
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    steps:
-    - name: Deploy to production
-      uses: appleboy/ssh-action@master
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_KEY }}                   
 
-        script: |
-          cd /home/ubuntu/calculator
-          sudo docker-compose up -d 
+    steps:
+      - name: Deploy to production via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/calculator
+            sudo docker compose pull
+            sudo docker compose up -d --build
