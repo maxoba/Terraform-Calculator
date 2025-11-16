@@ -5,15 +5,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the repository with full history to avoid Git errors
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
+      # Install Python dependencies
       - name: Install Dependencies
         run: |
+          sudo pip install --upgrade pip
           sudo pip install -r src/requirements.txt
-          python -m pip install --upgrade pip
 
-      # Use Docker Compose v2 (built-in)
+      # Build Docker Compose images locally (optional)
       - name: Build with Docker Compose
         run: docker compose build
 
@@ -22,6 +26,7 @@ jobs:
     needs: build
 
     steps:
+      # Deploy to EC2 via SSH
       - name: Deploy to production via SSH
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -29,18 +34,12 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_PRIVATE_KEY }}
           script: |
+            # Ensure project directory exists
             mkdir -p /home/ubuntu/calculator
             cd /home/ubuntu/calculator
+
+            # Install Docker if missing
             if ! command -v docker &> /dev/null; then
               echo "Docker not found. Installing..."
-              sudo apt update
-              sudo apt install -y docker.io docker-compose-plugin
-              sudo systemctl enable --now docker
-              sudo usermod -aG docker ubuntu
-              newgrp docker
-            fi
-              docker compose pull
-              docker compose up -d --build
+              curl -fsSL https://get.docker.com -o get-docker.sh
 
-          
-          
