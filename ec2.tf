@@ -14,7 +14,7 @@ resource "aws_instance" "calculator" {
 
 
 resource "time_sleep" "wait_for_instance" {
-  create_duration = "240s"
+  create_duration = "180"
 
   depends_on = [aws_instance.calculator]
 }
@@ -54,4 +54,11 @@ resource "aws_security_group" "allow_ssh_http" {
   }
 }
 
-
+terraform {
+  backend "s3" {
+    bucket = "maxomo1"
+    key = "github-action/terraform.tfstate"
+    region = "us-west-2"
+    
+  }
+}
